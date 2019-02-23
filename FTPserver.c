@@ -1,6 +1,8 @@
 #include <stdio.h>
 
 int main() {
-  printf("%s\n\n\n", "Here I am" );
-  return 0;
+	char buffer[1024] = {0}; 
+ 	printf("%s\n\n\n", "Here I am" );
+ 	printf("%d\n\n",  buffer[0]);
+	return 0;
 }
