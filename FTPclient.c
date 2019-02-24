@@ -7,8 +7,7 @@
 #include <netinet/in.h> 
 #include <string.h> 
 #include <unistd.h>
-#define PORT 8888 
-   
+    
 int main(int argc, char const *argv[]) 
 { 
     struct sockaddr_in address; 
@@ -18,6 +17,12 @@ int main(int argc, char const *argv[])
 
     //MY edit
     char outmsg[100] = {0};
+    int port; char ip[15] = {0};
+    port = atoi(argv[2]);
+    sscanf(argv[1], "%s", ip);
+
+    fflush(stdin);
+
     //
     char buffer[1024] = {0}; 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
@@ -29,7 +34,7 @@ int main(int argc, char const *argv[])
     memset(&serv_addr, '0', sizeof(serv_addr)); 
    
     serv_addr.sin_family = AF_INET; 
-    serv_addr.sin_port = htons(PORT); 
+    serv_addr.sin_port = htons(port); 
        
     // Convert IPv4 and IPv6 addresses from text to binary form 
     if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0)  
@@ -47,16 +52,18 @@ int main(int argc, char const *argv[])
      
 	send(sock , hello, strlen(hello) , 0 ); 
     valread = read( sock , buffer, 1024); 
-    printf("%s\n",buffer ); 
+    printf("%s\n\n",buffer ); 
     fflush(stdin);
 
     while(1){
-    	printf("\nftp> ");
+    	printf("ftp> ");
     	memset(outmsg, 0, sizeof(outmsg));
     	scanf("%s", outmsg);
 	    send(sock , outmsg, strlen(outmsg) , 0 ); 
+		memset(buffer, 0, sizeof(buffer));
 	    valread = read( sock , buffer, 1024); 
-	    printf("%s\n",buffer ); 
+	    printf("%s\n\n",buffer ); 
+	    fflush(stdin);
 	}
 	return 0;
 } 
