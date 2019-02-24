@@ -1,16 +1,62 @@
-#include <stdio.h>
-#include <string.h>
+ 
+// Client side C/C++ program to demonstrate Socket programming 
+#include <stdio.h> 
+#include <sys/socket.h> 
+#include <stdlib.h> 
+#include <arpa/inet.h>
+#include <netinet/in.h> 
+#include <string.h> 
+#include <unistd.h>
+#define PORT 8888 
+   
+int main(int argc, char const *argv[]) 
+{ 
+    struct sockaddr_in address; 
+    int sock = 0, valread; 
+    struct sockaddr_in serv_addr; 
+    char *hello = "Hello from client"; 
 
-int main(int argc, char *argv[]) {
-	// currently assuming 39 characters for IPv6
-	char ip[39];
-	int port;
+    //MY edit
+    char outmsg[100] = {0};
+    //
+    char buffer[1024] = {0}; 
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+    { 
+        printf("\n Socket creation error \n"); 
+        return -1; 
+    } 
+   
+    memset(&serv_addr, '0', sizeof(serv_addr)); 
+   
+    serv_addr.sin_family = AF_INET; 
+    serv_addr.sin_port = htons(PORT); 
+       
+    // Convert IPv4 and IPv6 addresses from text to binary form 
+    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0)  
+    { 
+        printf("\nInvalid address/ Address not supported \n"); 
+        return -1; 
+    } 
+   
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
+    { 
+        printf("\nConnection Failed \n"); 
+        return -1; 
+    } 
 
-	strcpy(ip, argv[1]);
-	sscanf(argv[2], "%d", &port);
+     
+	send(sock , hello, strlen(hello) , 0 ); 
+    valread = read( sock , buffer, 1024); 
+    printf("%s\n",buffer ); 
+    fflush(stdin);
 
-
-	printf("%s\t%d\n\n\n", ip, port);
+    while(1){
+    	printf("\nftp> ");
+    	memset(outmsg, 0, sizeof(outmsg));
+    	scanf("%s", outmsg);
+	    send(sock , outmsg, strlen(outmsg) , 0 ); 
+	    valread = read( sock , buffer, 1024); 
+	    printf("%s\n",buffer ); 
+	}
 	return 0;
-}
-
+} 
