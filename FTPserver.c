@@ -18,7 +18,8 @@ int main(int argc , char *argv[]){
     int mastsoc , addrlen , newsoc , clsocs[30], maxcls = 30;
     int activity , valread , sd;   
     int maxsd;   
-    int port = 8888;
+    int port = 8888; 
+    unsigned int buflen = 0;
     struct sockaddr_in address;   
          
     char buffer[1025];  //data buffer of 1K  
@@ -147,17 +148,23 @@ int main(int argc , char *argv[]){
 	                }else{   
 	                    //set the string terminating NULL byte on the end  
 	                    //of the data read  
-	                    buffer[valread] = '\0';   
+	                     
 	                    if (strncmp(buffer, "USER", 4)==0){ 
 				    		send(sd, "Username OK, password required", 30 , 0 );
 				    	}else if (strncmp(buffer, "PWD", 3)==0){
 
 					    	memset(buffer, 0, sizeof(buffer)); 
 				    		getcwd(buffer, sizeof(buffer));
-				    		printf("\n\nI got a PWD REQUEST @ path-%s\n\n", buffer );
-				    		send(sd, buffer, sizeof(buffer) , 0 );
+
+				    		buflen = (unsigned)strlen(buffer);
+				    		buflen++; 
+				    		// make sure buffer terminates in NULL char
+				    		buffer[buflen] = '\0';
+				    		send(sd, &buflen, 4, 0 );	
+				    		send(sd, buffer, buflen, 0 );
+ 
 				    	}else if (strncmp(buffer, "PASS", 4)==0){ 
-				    		send(sd, "Password okay", 30 , 0 );
+				    		send(sd, "Password okay", 13 , 0 );
 				    	}
 
 	                       
