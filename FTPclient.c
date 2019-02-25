@@ -56,8 +56,9 @@ int main(int argc, char const *argv[])
     printf("%s\n\n", buffer ); 
     fflush(stdin);
 
- 
+     
     while(1){
+    	 
     	printf("ftp> ");
     	fflush(stdin);
     	memset(cmd, 0, sizeof(cmd)); 
@@ -65,8 +66,9 @@ int main(int argc, char const *argv[])
     	memset(outmsg, 0, sizeof(outmsg)); 
     	scanf("%s", cmd);
     	// authenticate User
+    	 
     	if (strncmp(cmd, "USER", 4)==0){ 
-    		scanf("%s", arg);
+    		scanf("%s", arg); 
     		sprintf(outmsg, "USER %s", arg);
     		// send username to server
 	  		send(soc, outmsg, strlen(outmsg), 0 );
@@ -95,7 +97,6 @@ int main(int argc, char const *argv[])
 	    	// if the user gives password
     		if (strncmp(cmd, "PASS", 4)==0){ 
     			
-				// scanf("%s", arg);
 
 	    		// send password to server
 		  		sprintf(outmsg, "PASS %s", arg);
@@ -261,7 +262,9 @@ int main(int argc, char const *argv[])
 		
 		// ask to authenticate first if not done
 		}else{
-			printf("Please authenticate\n"); 
+			scanf("%s", arg);
+			printf("Please authenticate. \n\n"); 
+			fflush(stdin);
 			continue;
 		}
 	}

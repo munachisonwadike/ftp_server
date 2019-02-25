@@ -1,20 +1,23 @@
 Test cases for FTP client (need to complete)
 
-1)
+1) Different permutations of Username Password
+requirements, to ensure that if the user fails to give the right password after a good username, they will have to give password from scratch
+
+a) 
+ftp> USER user
+ftp> PASS pass
+
+b)
 ftp> USER user
 ftp> user USER
 ftp> USER user
 
-- This is to be sure that the after a good username a bad password would cause you to have to start again with the username
-
-2)
-
+c)
 ftp> USER user 
 ftp> user USER
-Need to provide both Username & Password!
 ftp> PASS pass
--This is to be sure that if the user fails to give the right password after a good username, they will have to give password from scratch
 
+2) PWD?
  
 Test cases for FTP server
 
