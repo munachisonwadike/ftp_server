@@ -81,7 +81,7 @@ int main(int argc , char *argv[]){
             //socket descriptor  
             sd = clsocs[i];   
                  
-            //if valid socket descriptor then add to read list  
+            //if valid socket descriptor, add to read list  
             if(sd > 0)   
                 FD_SET( sd , &readfds);   
                  
@@ -97,6 +97,8 @@ int main(int argc , char *argv[]){
         }   
              
         //If something happened on the master socket, then its an incoming connection so create new socket
+        
+
         if (FD_ISSET(mastsoc, &readfds)){   
 
 	        if ((newsoc = accept(mastsoc, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0){   
@@ -128,37 +130,39 @@ int main(int argc , char *argv[]){
 
 	       
         }else{
-	 	    //else its some IO operation on some other socket
+	 	    //else IO on another socket
 	        for (int i = 0; i < maxcls; i++){   
 	            sd = clsocs[i];   
 	                 
-	            if (FD_ISSET( sd , &readfds)){   
-	                //Check if it was for closing , and also read the  
-	                //incoming message  
-	                if ((valread = read( sd , buffer, 1024)) == 0){   
+	            if (FD_ISSET(sd, &readfds)){   
+   	                //kill two birds with one stone by reading the message and checking if it was a close request
+	                if ((valread = read(sd, buffer, 1024)) == 0){   
 	                    //Somebody disconnected , get his details and print  
-	                    getpeername(sd , (struct sockaddr*)&address , 
-	                        (socklen_t*)&addrlen);   
-	                    printf("Host disconnected , ip %s , port %d \n" ,  
-	                          inet_ntoa(address.sin_addr) , ntohs(address.sin_port));   
-	                         
+	                    getpeername(sd, (struct sockaddr*)&address, (socklen_t*)&addrlen);   
+	                    printf("Host disconnected , ip %s , port %d \n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));   
 	                    //Close the socket and mark as 0 in list for reuse  
 	                    close(sd);   
 	                    clsocs[i] = 0;   
-	                      
-	                //Echo back the message that came in  
+	                // if it wasnt to close, check what it was and respond appropriately
 	                }else{   
 	                    //set the string terminating NULL byte on the end  
 	                    //of the data read  
 	                    buffer[valread] = '\0';   
-	                    send(sd , buffer , strlen(buffer) , 0 );   
+	                    if (strncmp(buffer, "USER", 4)==0){ 
+				    		send(sd, "Username OK, password required", 30 , 0 );
+				    	}else if (strncmp(buffer, "PASS", 4)==0){ 
+				    		send(sd, "Password okay", 30 , 0 );
+				    	}
+
+	                       
 	                }   
 	            }   
 
 	        }
 
+	    }
 
-    	}
+
     }   
          
     return 0;   
