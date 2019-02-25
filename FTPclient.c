@@ -56,9 +56,8 @@ int main(int argc, char const *argv[])
     printf("%s\n\n", buffer ); 
     fflush(stdin);
 
-    int x = -1;
+ 
     while(1){
-    	x++;
     	printf("ftp> ");
     	fflush(stdin);
     	memset(cmd, 0, sizeof(cmd)); 
@@ -248,7 +247,7 @@ int main(int argc, char const *argv[])
 				}
 			// otherwise ask for password
 			}else{
-				printf("Need to provide both Username & Password! %d\n\n", x);
+				printf("Need to provide both Username & Password!\n\n");
 				fflush(stdin); 
 				continue;
 			}

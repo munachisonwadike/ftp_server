@@ -1,31 +1,8 @@
-need to inlcude the test cases I used to test the server to be sure it works along with putting the test cases in the folder
-The IP addresses are ipv4
-https://stackoverflow.com/questions/14388706/socket-options-so-reuseaddr-and-so-reuseport-how-do-they-differ-do-they-mean-t
+ 
+Brief description of Client-Server architecture:
 
-The main difference between sockets and files is that you allow for connections- the socket is just like a real sucket so the data "plugs" in there and gest sent over the internet...
+I started the eserver using the select system call,
+The client was done using the regular approach whereby it creates a socket over tcp and sends content to the socket. The server creates its own socket and reads from the sockets. Both the client and the server can read and write to the socket using the send and read calls. The default backlog of incoming connections to the server is 3 so in order to handle multiple connections, I had to use the select system call. The master socket was bound to the different ports on the server so that if there is a change in the the master socket, we know there is an incoming connection. 
 
-Make sure to use the "get protobyname" to get the TCP protocol in the setsockopt functions...
+...
 
-Outline for the day- socket part, the file change part, then documentation and cleaning.
-
-Test case for FTP client
-
-1)
-ftp> USER user
-ftp> -user USER
-ftp> USER user
-
-- This is to be sure that the after a good username a bad password would cause you to have to start again with the username
-
-2)
-
-Test cases for FTP server
-
-
-<!-- 
-git commit -m ""
-git add *
-
-git push
-
- -->
