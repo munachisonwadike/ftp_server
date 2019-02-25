@@ -116,8 +116,8 @@ int main(int argc, char const *argv[])
 			    fflush(stdin);
 
 			    // given user name and passowrd, should be able to run all other commands
-				while(1){
-					printf("ftp> ");
+ 				while(1){
+ 					printf("ftp> ");
 			    	fflush(stdin);
 			    	memset(cmd, 0, sizeof(cmd)); 
 			    	memset(arg, 0, sizeof(arg));
@@ -181,16 +181,13 @@ int main(int argc, char const *argv[])
 					    fflush(stdin);
 				    // handle the remote pwd command to display current directory
 					}else if (strncmp(cmd, "PWD", 3)==0){ 
-			    		// get the pwd file 
-						scanf("%s", arg);
-						sprintf(outmsg, "PWD %s", arg);
-
-			    		// send put to server
-				  		send(soc, outmsg, strlen(outmsg), 0 );
+			     		printf(" cmd-%s, arg-%s \n", cmd, arg);
+			    		// send pwd to server
+				  		send(soc, "PWD", 3, 0 );
 
 						// read the server response to screen
 						memset(buffer, 0, sizeof(buffer));
-					    valread = read( soc , buffer, 1024);  
+					    valread = read( soc , buffer, 50);  
 					    printf("%s\n\n",buffer ); 
 					    fflush(stdin);
 				    // handle the local ls command 
@@ -242,7 +239,8 @@ int main(int argc, char const *argv[])
 			    		close(soc);
 			    		exit(1);
 			    	} else{
-						printf("Command not valid\n"); 
+						printf("Command not valid. \n\n"); 
+						fflush(stdin);
 						continue;
 			    	}
 				}

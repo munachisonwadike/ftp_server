@@ -150,6 +150,12 @@ int main(int argc , char *argv[]){
 	                    buffer[valread] = '\0';   
 	                    if (strncmp(buffer, "USER", 4)==0){ 
 				    		send(sd, "Username OK, password required", 30 , 0 );
+				    	}else if (strncmp(buffer, "PWD", 3)==0){
+
+					    	memset(buffer, 0, sizeof(buffer)); 
+				    		getcwd(buffer, sizeof(buffer));
+				    		printf("\n\nI got a PWD REQUEST @ path-%s\n\n", buffer );
+				    		send(sd, buffer, sizeof(buffer) , 0 );
 				    	}else if (strncmp(buffer, "PASS", 4)==0){ 
 				    		send(sd, "Password okay", 30 , 0 );
 				    	}

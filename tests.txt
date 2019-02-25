@@ -17,8 +17,14 @@ ftp> USER user
 ftp> user USER
 ftp> PASS pass
 
-2) PWD?
- 
+2) Testing PWD after authentication
+
+ftp> PWD 
+ftp> USER //should say command not valid
+ftp> PWD //should still print current directory so had to debug this
+
+
+
 Test cases for FTP server
 
 1)
