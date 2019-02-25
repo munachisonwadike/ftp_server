@@ -9,31 +9,33 @@
     
 int main(int argc, char const *argv[]) 
 { 
+
+    char arg[10] = {0};
+    char buffer[1024] = {0}; 
+    char cmd[5] = {0};
+	char *hello = "Hello from client"; 
+	char ip[15] = {0};
+    char outmsg[20] = {0};
+
+    int port;
+    int reclen;
+    int retval;
+    int sendlen;
+    int soc = 0;
+    int valread;
+
     struct sockaddr_in cl_address; 
     struct sockaddr_in server_addr;
-    int soc = 0; 
-    char *hello = "Hello from client"; 
-
-    //MY edit
-    char cmd[5] = {0};
-    char arg[10] = {0};
-    char outmsg[20] = {0};
-    
-    int sendlen;
-    int reclen;
-
-    int port; char ip[15] = {0};
+     
+   
     port = atoi(argv[2]);
     sscanf(argv[1], "%s", ip);
 
-    fflush(stdin);
+ 
 
-    //
-    int valread;
-
-    char buffer[1024] = {0}; 
     if ((soc = socket(AF_INET, SOCK_STREAM, 0)) < 0){ 
         printf("\n Socket creation error \n"); 
+        fflush(stdin);
         return -1; 
     } 
    
@@ -122,6 +124,7 @@ int main(int argc, char const *argv[])
 
 			    // given user name and passowrd, should be able to run all other commands
  				while(1){
+ 					retval = 0;
  					sendlen=0; reclen=0;
  					printf("ftp> ");
 			    	fflush(stdin);
@@ -175,11 +178,9 @@ int main(int argc, char const *argv[])
 
 					    // if says dir doesn't exist (-1), point this out
 					    if(*buffer==-1){
-					    	printf("Directory, '%s' does not exist.\n", arg); 
-					    	continue;
+					    	printf("Directory, '%s' does not exist.\n\n", arg); 
 					    }
-
-				  		continue;
+ 
 					// handle the remote ls command
 					}else if (strncmp(cmd, "LS", 2)==0){ 
 			    		// get the ls file 
@@ -232,18 +233,12 @@ int main(int argc, char const *argv[])
 					    continue;
 					// handle the local cd command to change current directory
 					}else if (strncmp(cmd, "!CD", 3)==0){ 
-			    		// get the !cd file 
-						scanf("%s", arg);
-						sprintf(outmsg, "!CD %s", arg);
+			    		// get the cd  
+			    		scanf("%s", arg); retval = chdir(arg);
+						if (retval!=0){
+							printf( "Directory, '%s' does not exist.\n\n", arg );
+						}		 
 
-			    		// send put to server
-				  		send(soc, outmsg, strlen(outmsg), 0 );
-
-						// read the server response to screen
-						memset(buffer, 0, sizeof(buffer));
-					    valread = read( soc , buffer, 1024);  
-					    printf("%s\n\n",buffer ); 
-					    fflush(stdin);
 					// quit the ftp process
 					}else if (strncmp(cmd, "QUIT", 4)==0){ 
 			    		printf("%s\n\n", "Goodbye!" ); 

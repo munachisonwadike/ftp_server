@@ -12,17 +12,29 @@
  
      
 int main(int argc , char *argv[]){   
-    int valread, sd, retval, activity, newsoc, addrlen, mastsoc;   
-    int maxsd;   
-    int opt = 1; 
-    int  clsocs[30], maxcls = 30;
-    int port = 8888; int reclen;
-    unsigned int buflen = 0;
-    struct sockaddr_in address;   
-         
     char buffer[1025];  //for storing incoming data  
     char cmd[5]; 	//for storing file name
 	char filenm[40]; 	//for storing file name
+    char *message = "Munachiso's FTP Server 0.1 \r\n";  //welcome message 
+
+	int activity, addrlen;
+    int clsocs[30];
+    int mastsoc;
+    int maxsd;
+    int newsoc;
+    int reclen;
+    int retval; 
+    int sd; 
+    int valread;  
+    
+    int opt = 1;
+    int port = 8888; 
+	int maxcls = 30;
+    
+    struct sockaddr_in address;   
+    unsigned int buflen = 0;
+         
+
     
     //set of socket descriptors and in an array as well so we can loop through them
     fd_set readfds;    
@@ -30,8 +42,6 @@ int main(int argc , char *argv[]){
         clsocs[i] = 0;   
     }  
 
-    // welcome message
-    char *message = "Munachiso's FTP Server 0.1 \r\n";   
      
       
          
