@@ -115,7 +115,7 @@ int main(int argc, char const *argv[])
 
 			    // if says the password not okay, then ask for them again
 			    if(strncmp("Pass", buffer, 4)!=0){
-			    	printf("Password need\n"); 
+			    	printf("Password needed\n"); 
 			    	continue;
 			    }
 			    // otherwise, display what is said on the screen (should be Password also okay)
@@ -183,18 +183,21 @@ int main(int argc, char const *argv[])
  
 					// handle the remote ls command
 					}else if (strncmp(cmd, "LS", 2)==0){ 
-			    		// get the ls file 
-						scanf("%s", arg);
-						sprintf(outmsg, "LS %s", arg);
-
-			    		// send put to server
-				  		send(soc, outmsg, strlen(outmsg), 0 );
+			    		// send ls to server 
+ 			    		sendlen = 2;
+ 			    		send(soc, &sendlen, 4, 0  );
+				  		send(soc, "LS", sendlen, 0 );
 
 						// read the server response to screen
-						memset(buffer, 0, sizeof(buffer));
-					    valread = read( soc , buffer, 1024);  
-					    printf("%s\n\n",buffer ); 
-					    fflush(stdin);
+						while( (valread = recv(soc, &reclen, 4, 0 )) != 0 ){
+							if (reclen==0) break;
+							memset(buffer, 0, sizeof(buffer));
+						    valread = recv(soc, buffer, reclen, 0 );  
+						    printf("~ /%s", buffer ); 
+						    fflush(stdin);
+						}
+						printf("\n\n");
+
 				    // handle the remote pwd command to display current directory
 					}else if (strncmp(cmd, "PWD", 3)==0){ 
  			    		// send pwd to server 

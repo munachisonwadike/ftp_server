@@ -1,4 +1,5 @@
 #include <arpa/inet.h> 
+#include <dirent.h>
 #include <errno.h> 
 #include <netinet/in.h>
 #include <netdb.h> 
@@ -17,6 +18,8 @@ int main(int argc , char *argv[]){
 	char filenm[40]; 	//for storing file name
     char *message = "Munachiso's FTP Server 0.1 \r\n";  //welcome message 
 
+    DIR *currdir;
+
 	int activity, addrlen;
     int clsocs[30];
     int mastsoc;
@@ -31,7 +34,8 @@ int main(int argc , char *argv[]){
     int port = 8888; 
 	int maxcls = 30;
     
-    struct sockaddr_in address;   
+    struct sockaddr_in address; 
+    struct dirent* currdirent;  
     unsigned int buflen = 0;
          
 
@@ -151,7 +155,7 @@ int main(int argc , char *argv[]){
 	                if ((valread = read(sd, &reclen, 4)) == 0){   
 	                    //Somebody disconnected , get his details and print  
 	                    getpeername(sd, (struct sockaddr*)&address, (socklen_t*)&addrlen);   
-	                    printf("Host disconnected , ip %s , port %d \n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));   
+	                    printf("Host disconnected, ip %s, port %d \n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));   
 	                    fflush(stdin);
 	                    //Close the socket and mark as 0 in list for reuse  
 	                    close(sd);   
@@ -159,11 +163,10 @@ int main(int argc , char *argv[]){
 	                // if it wasnt to close, check what it was and respond appropriately
 	                }else{   	    
 		                valread = read(sd, buffer, reclen);   
-		                printf("Length in bytes of the digit should be 4? == %d\n\n", reclen);              
 	                    if (strncmp(buffer, "USER", 4)==0){ 
 				    		send(sd, "Username OK, password required", 30 , 0 );
 				    	}else if (strncmp(buffer, "PWD", 3)==0){
-
+				    		//clear buffer and use getcwd to put the current directory there
 					    	memset(buffer, 0, sizeof(buffer)); 
 				    		getcwd(buffer, sizeof(buffer));
 
@@ -173,6 +176,44 @@ int main(int argc , char *argv[]){
 				    		buffer[buflen] = '\0';
 				    		send(sd, &buflen, 4, 0 );	
 				    		send(sd, buffer, buflen, 0 );
+				    	}else if (strncmp(buffer, "LS", 2)==0){
+				    		// use pointer to needed directory
+				    		currdir = opendir(".");
+
+				    		if (currdir == NULL){
+				    			printf("Cannot open directory\n\n");
+				    		}
+
+				    		// use readdir to send out the directory, clear buffer each time
+				    		while(1){
+				    			memset(buffer, 0, sizeof(buffer));
+
+								if ( (currdirent= readdir(currdir)) != NULL){ 
+					    			printf("iter %d dirent inode %u \n", i,  (unsigned)currdirent->d_ino );
+					    			sprintf(buffer, "%s\n", currdirent->d_name);
+					    			buflen = (int)strlen(buffer);
+					    			
+					    			buflen++; 
+
+					    			buffer[buflen] = '\0';
+					    			send(sd, &buflen, 4, 0 );	
+					    			send(sd, buffer, buflen, 0 );	
+
+  
+					    		}else{
+					    			buflen = 0;
+					    			send(sd, &buflen, 4, 0 );
+ 					    			break;
+					    		}
+
+				    		} 
+
+				    		printf("We got out of the LOOOP->");
+				    		send(sd, &buflen, 0, 0 );
+				    		closedir(currdir);
+				    		// make sure buffer terminates in NULL char
+				    		
+ 						
  						}else if (strncmp(buffer, "CD", 2)==0){ 
  					    	memset(cmd, 0, sizeof(cmd)); 
 					    	memset(filenm, 0, sizeof(filenm)); 
