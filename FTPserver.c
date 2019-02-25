@@ -12,16 +12,17 @@
  
      
 int main(int argc , char *argv[]){   
-    int opt = 1;   
-    int mastsoc , addrlen , newsoc , clsocs[30], maxcls = 30;
-    int activity , valread , sd;   
+    int valread, sd, retval, activity, newsoc, addrlen, mastsoc;   
     int maxsd;   
+    int opt = 1; 
+    int  clsocs[30], maxcls = 30;
     int port = 8888; int reclen;
     unsigned int buflen = 0;
     struct sockaddr_in address;   
          
     char buffer[1025];  //for storing incoming data  
-    char filenm[1025]; 	//for storing file name
+    char cmd[5]; 	//for storing file name
+	char filenm[40]; 	//for storing file name
     
     //set of socket descriptors and in an array as well so we can loop through them
     fd_set readfds;    
@@ -68,7 +69,7 @@ int main(int argc , char *argv[]){
     //accept the incoming connections
     puts("Waiting for connections ...");       
     while(1){   
-    	reclen = 0;
+    	reclen = 0; retval =0;
         //clear the socket set  
         FD_ZERO(&readfds);   
      
@@ -132,7 +133,7 @@ int main(int argc , char *argv[]){
         }else{
 	 	    //else IO on another socket
 	        for (int i = 0; i < maxcls; i++){   
-	        	reclen=0;
+	        	reclen=0; retval=0;
 	            sd = clsocs[i];   
 	                 
 	            if (FD_ISSET(sd, &readfds)){   
@@ -163,9 +164,22 @@ int main(int argc , char *argv[]){
 				    		send(sd, &buflen, 4, 0 );	
 				    		send(sd, buffer, buflen, 0 );
  						}else if (strncmp(buffer, "CD", 2)==0){ 
- 							sscanf(buffer,"%s %s", buffer, &filenm);
- 							chdir(filenm);
- 							printf("switched to directory %s ", filenm);
+ 					    	memset(cmd, 0, sizeof(cmd)); 
+					    	memset(filenm, 0, sizeof(filenm)); 
+
+							// put the command into a path and change dir to that path
+							sscanf(buffer,"%s %s", cmd, filenm);
+ 							retval = chdir(filenm);
+ 							if(retval==0){
+ 								printf("Switched to directory-> %s \n", filenm);
+ 								fflush(stdin);
+ 								send(sd, &retval, 4, 0);
+ 							}
+ 							else{
+ 								memset(buffer, 0, sizeof(buffer)); 
+ 								send(sd, &retval, 4, 0 );	 
+ 							}
+ 							
 
 				    	}else if (strncmp(buffer, "PASS", 4)==0){ 
 				    		send(sd, "Password okay", 13 , 0 );

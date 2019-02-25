@@ -161,16 +161,23 @@ int main(int argc, char const *argv[])
 					}else if (strncmp(cmd, "CD", 2)==0){ 
 
  				  		scanf("%s", arg); 
-						sprintf(outmsg, "CD %s", arg);
+						sprintf(outmsg, "CD %s\n", arg);
 
 			    		// send cd command to server
 			    		sendlen = (int)strlen(outmsg);
 
-			    		printf("Current sendlen == %d\n", sendlen);
 			    		send(soc, &sendlen, 4, 0  );
 				  		send(soc, outmsg, sendlen, 0);  
 
+				  		// read the server response 
+						memset(buffer, 0, sizeof(buffer));
+					    valread = read(soc , buffer, 4); 
 
+					    // if says dir doesn't exist (-1), point this out
+					    if(*buffer==-1){
+					    	printf("Directory, '%s' does not exist.\n", arg); 
+					    	continue;
+					    }
 
 				  		continue;
 					// handle the remote ls command
