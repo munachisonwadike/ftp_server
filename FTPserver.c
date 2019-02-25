@@ -1,16 +1,14 @@
-//Example code: A simple server side code, which echos back the received message. 
-//Handle multiple socket connections with select and fd_set on Linux  
-#include <stdio.h>  
-#include <string.h>   //strlen  
-#include <stdlib.h>  
-#include <errno.h>  
-#include <unistd.h>   //close  
-#include <arpa/inet.h>    //close  
-#include <sys/types.h>  
-#include <sys/socket.h>  
+#include <arpa/inet.h> 
+#include <errno.h> 
 #include <netinet/in.h>
-#include <netdb.h>
-#include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros  
+#include <netdb.h> 
+#include <stdio.h>  
+#include <stdlib.h>      
+#include <string.h>    
+#include <sys/socket.h>  
+#include <sys/types.h>  
+#include <sys/time.h>  
+#include <unistd.h>     
  
      
 int main(int argc , char *argv[]){   
@@ -18,14 +16,14 @@ int main(int argc , char *argv[]){
     int mastsoc , addrlen , newsoc , clsocs[30], maxcls = 30;
     int activity , valread , sd;   
     int maxsd;   
-    int port = 8888; 
+    int port = 8888; int reclen;
     unsigned int buflen = 0;
     struct sockaddr_in address;   
          
-    char buffer[1025];  //data buffer of 1K  
-         
+    char buffer[1025];  //for storing incoming data  
+    char filenm[1025]; 	//for storing file name
+    
     //set of socket descriptors and in an array as well so we can loop through them
-
     fd_set readfds;    
     for (int i = 0; i < maxcls; i++){   
         clsocs[i] = 0;   
@@ -70,6 +68,7 @@ int main(int argc , char *argv[]){
     //accept the incoming connections
     puts("Waiting for connections ...");       
     while(1){   
+    	reclen = 0;
         //clear the socket set  
         FD_ZERO(&readfds);   
      
@@ -133,22 +132,23 @@ int main(int argc , char *argv[]){
         }else{
 	 	    //else IO on another socket
 	        for (int i = 0; i < maxcls; i++){   
+	        	reclen=0;
 	            sd = clsocs[i];   
 	                 
 	            if (FD_ISSET(sd, &readfds)){   
    	                //kill two birds with one stone by reading the message and checking if it was a close request
-	                if ((valread = read(sd, buffer, 1024)) == 0){   
+	                if ((valread = read(sd, &reclen, 4)) == 0){   
 	                    //Somebody disconnected , get his details and print  
 	                    getpeername(sd, (struct sockaddr*)&address, (socklen_t*)&addrlen);   
 	                    printf("Host disconnected , ip %s , port %d \n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));   
+	                    fflush(stdin);
 	                    //Close the socket and mark as 0 in list for reuse  
 	                    close(sd);   
 	                    clsocs[i] = 0;   
 	                // if it wasnt to close, check what it was and respond appropriately
-	                }else{   
-	                    //set the string terminating NULL byte on the end  
-	                    //of the data read  
-	                     
+	                }else{   	    
+		                valread = read(sd, buffer, reclen);   
+		                printf("Length in bytes of the digit should be 4? == %d\n\n", reclen);              
 	                    if (strncmp(buffer, "USER", 4)==0){ 
 				    		send(sd, "Username OK, password required", 30 , 0 );
 				    	}else if (strncmp(buffer, "PWD", 3)==0){
@@ -156,13 +156,17 @@ int main(int argc , char *argv[]){
 					    	memset(buffer, 0, sizeof(buffer)); 
 				    		getcwd(buffer, sizeof(buffer));
 
-				    		buflen = (unsigned)strlen(buffer);
+				    		buflen = (int)strlen(buffer);
 				    		buflen++; 
 				    		// make sure buffer terminates in NULL char
 				    		buffer[buflen] = '\0';
 				    		send(sd, &buflen, 4, 0 );	
 				    		send(sd, buffer, buflen, 0 );
- 
+ 						}else if (strncmp(buffer, "CD", 2)==0){ 
+ 							sscanf(buffer,"%s %s", buffer, &filenm);
+ 							chdir(filenm);
+ 							printf("switched to directory %s ", filenm);
+
 				    	}else if (strncmp(buffer, "PASS", 4)==0){ 
 				    		send(sd, "Password okay", 13 , 0 );
 				    	}

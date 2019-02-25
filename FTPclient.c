@@ -1,12 +1,11 @@
- 
-// Client side C/C++ program to demonstrate Socket programming 
-#include <stdio.h> 
-#include <sys/socket.h> 
-#include <stdlib.h> 
 #include <arpa/inet.h>
 #include <netinet/in.h> 
+#include <sys/socket.h> 
+#include <stdio.h> 
+#include <stdlib.h> 
 #include <string.h> 
 #include <unistd.h>
+
     
 int main(int argc, char const *argv[]) 
 { 
@@ -20,6 +19,7 @@ int main(int argc, char const *argv[])
     char arg[10] = {0};
     char outmsg[20] = {0};
     
+    int sendlen;
     int reclen;
 
     int port; char ip[15] = {0};
@@ -58,9 +58,9 @@ int main(int argc, char const *argv[])
     printf("%s\n\n", buffer ); 
     fflush(stdin);
 
-     
+    
     while(1){
-    	 
+    	sendlen=0; reclen=0;
     	printf("ftp> ");
     	fflush(stdin);
     	memset(cmd, 0, sizeof(cmd)); 
@@ -73,7 +73,9 @@ int main(int argc, char const *argv[])
     		scanf("%s", arg); 
     		sprintf(outmsg, "USER %s", arg);
     		// send username to server
-	  		send(soc, outmsg, strlen(outmsg), 0 );
+    		sendlen = (unsigned)strlen(outmsg);
+    		send(soc, &sendlen, 4, 0  );
+	  		send(soc, outmsg, sendlen, 0);
     		
     		// check what server said
     		memset(buffer, 0, sizeof(buffer));
@@ -98,12 +100,13 @@ int main(int argc, char const *argv[])
 	    	scanf("%s", arg);
 	    	// if the user gives password
     		if (strncmp(cmd, "PASS", 4)==0){ 
-    			
+	    		sprintf(outmsg, "PASS %s", arg);
 
-	    		// send password to server
-		  		sprintf(outmsg, "PASS %s", arg);
-				send(soc, outmsg, strlen(outmsg), 0 );
-
+	    		// send username to server
+	    		sendlen = (unsigned)strlen(outmsg);
+	    		send(soc, &sendlen, 4, 0  );
+		  		send(soc, outmsg, sendlen, 0);
+	    			    	
 				// read the server response 
 				memset(buffer, 0, sizeof(buffer));
 			    valread = read( soc , buffer, 13); 
@@ -119,6 +122,7 @@ int main(int argc, char const *argv[])
 
 			    // given user name and passowrd, should be able to run all other commands
  				while(1){
+ 					sendlen=0; reclen=0;
  					printf("ftp> ");
 			    	fflush(stdin);
 			    	memset(cmd, 0, sizeof(cmd)); 
@@ -155,18 +159,20 @@ int main(int argc, char const *argv[])
 					    fflush(stdin);
 					// handle the remote cd command
 					}else if (strncmp(cmd, "CD", 2)==0){ 
-			    		// get the cd file 
-						scanf("%s", arg);
+
+ 				  		scanf("%s", arg); 
 						sprintf(outmsg, "CD %s", arg);
 
-			    		// send put to server
-				  		send(soc, outmsg, strlen(outmsg), 0 );
+			    		// send cd command to server
+			    		sendlen = (int)strlen(outmsg);
 
-						// read the server response to screen
-						memset(buffer, 0, sizeof(buffer));
-					    valread = read( soc , buffer, 1024);  
-					    printf("%s\n\n",buffer ); 
-					    fflush(stdin);
+			    		printf("Current sendlen == %d\n", sendlen);
+			    		send(soc, &sendlen, 4, 0  );
+				  		send(soc, outmsg, sendlen, 0);  
+
+
+
+				  		continue;
 					// handle the remote ls command
 					}else if (strncmp(cmd, "LS", 2)==0){ 
 			    		// get the ls file 
@@ -183,10 +189,10 @@ int main(int argc, char const *argv[])
 					    fflush(stdin);
 				    // handle the remote pwd command to display current directory
 					}else if (strncmp(cmd, "PWD", 3)==0){ 
- 			    		// send pwd to server
- 
-			    		// send put to server
-				  		send(soc, "PWD", 3, 0 );
+ 			    		// send pwd to server 
+ 			    		sendlen = 3;
+ 			    		send(soc, &sendlen, 4, 0  );
+				  		send(soc, "PWD", sendlen, 0 );
 
 						// read the server response to screen
 						memset(buffer, 0, sizeof(buffer));
@@ -194,7 +200,7 @@ int main(int argc, char const *argv[])
 					    valread = recv(soc, buffer, reclen, 0 );  
 					    printf("%s\n\n", buffer ); 
 					    fflush(stdin);
-					    
+
 				    // handle the local ls command 
 					}else if (strncmp(cmd, "!LS", 3)==0){ 
 			    		// get the !ls file 
@@ -211,8 +217,11 @@ int main(int argc, char const *argv[])
 					    fflush(stdin);
 				    // handle the local pwd command to display current directory
 					}else if (strncmp(cmd, "!PWD", 4)==0){ 
-			    		// get the pwd file 
-						
+			    		// get the pwd  
+			    		memset(buffer, 0, sizeof(buffer));
+			    		getcwd(buffer, sizeof(buffer));
+			    		printf("%s\n\n", buffer);   
+	                    fflush(stdin);
 					    continue;
 					// handle the local cd command to change current directory
 					}else if (strncmp(cmd, "!CD", 3)==0){ 
