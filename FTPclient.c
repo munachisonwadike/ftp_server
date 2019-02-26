@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <dirent.h>
 #include <netinet/in.h> 
 #include <sys/socket.h> 
 #include <stdio.h> 
@@ -17,6 +18,8 @@ int main(int argc, char const *argv[])
 	char ip[15] = {0};
     char outmsg[20] = {0};
 
+    DIR *currdir;
+
     int port;
     int reclen;
     int retval;
@@ -24,6 +27,7 @@ int main(int argc, char const *argv[])
     int soc = 0;
     int valread;
 
+    struct dirent* currdirent;  
     struct sockaddr_in cl_address; 
     struct sockaddr_in server_addr;
      
@@ -176,11 +180,13 @@ int main(int argc, char const *argv[])
 						memset(buffer, 0, sizeof(buffer));
 					    valread = read(soc , buffer, 4); 
 
+
 					    // if says dir doesn't exist (-1), point this out
 					    if(*buffer==-1){
 					    	printf("Directory, '%s' does not exist.\n\n", arg); 
+					    }else{
+					    	printf("\n");
 					    }
- 
 					// handle the remote ls command
 					}else if (strncmp(cmd, "LS", 2)==0){ 
 			    		// send ls to server 
@@ -197,7 +203,6 @@ int main(int argc, char const *argv[])
 						    fflush(stdin);
 						}
 						printf("\n\n");
-
 				    // handle the remote pwd command to display current directory
 					}else if (strncmp(cmd, "PWD", 3)==0){ 
  			    		// send pwd to server 
@@ -211,21 +216,29 @@ int main(int argc, char const *argv[])
 					    valread = recv(soc, buffer, reclen, 0 );  
 					    printf("%s\n\n", buffer ); 
 					    fflush(stdin);
-
 				    // handle the local ls command 
 					}else if (strncmp(cmd, "!LS", 3)==0){ 
-			    		// get the !ls file 
-						scanf("%s", arg);
-						sprintf(outmsg, "!LS %s", arg);
+			    		// use pointer to needed directory
+				    	currdir = opendir(".");
 
-			    		// send put to server
-				  		send(soc, outmsg, strlen(outmsg), 0 );
+			    		if (currdir == NULL){
+			    			printf("Cannot open directory\n\n");
+			    		}
 
-						// read the server response to screen
-						memset(buffer, 0, sizeof(buffer));
-					    valread = read( soc , buffer, 1024);  
-					    printf("%s\n\n",buffer ); 
-					    fflush(stdin);
+			    		// use readdir to send out the directory, clear buffer each time
+			    		while(1){
+			    			memset(buffer, 0, sizeof(buffer));
+
+							if ( (currdirent= readdir(currdir)) != NULL){ 
+					    		printf("%s\n", currdirent->d_name);
+ 				    		}else{
+ 				    			printf("\n\n");
+					    		break;
+				    		}
+
+			    		} 
+ 			    		closedir(currdir);
+ 				    		
 				    // handle the local pwd command to display current directory
 					}else if (strncmp(cmd, "!PWD", 4)==0){ 
 			    		// get the pwd  
@@ -240,6 +253,8 @@ int main(int argc, char const *argv[])
 			    		scanf("%s", arg); retval = chdir(arg);
 						if (retval!=0){
 							printf( "Directory, '%s' does not exist.\n\n", arg );
+						}else{
+							printf("\n");
 						}		 
 
 					// quit the ftp process

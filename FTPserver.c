@@ -189,8 +189,7 @@ int main(int argc , char *argv[]){
 				    			memset(buffer, 0, sizeof(buffer));
 
 								if ( (currdirent= readdir(currdir)) != NULL){ 
-					    			printf("iter %d dirent inode %u \n", i,  (unsigned)currdirent->d_ino );
-					    			sprintf(buffer, "%s\n", currdirent->d_name);
+ 					    			sprintf(buffer, "%s\n", currdirent->d_name);
 					    			buflen = (int)strlen(buffer);
 					    			
 					    			buflen++; 
@@ -199,20 +198,17 @@ int main(int argc , char *argv[]){
 					    			send(sd, &buflen, 4, 0 );	
 					    			send(sd, buffer, buflen, 0 );	
 
-  
+  								//if we reach the end of the directory, send a zero bit so the client knows
 					    		}else{
 					    			buflen = 0;
 					    			send(sd, &buflen, 4, 0 );
  					    			break;
 					    		}
 
-				    		} 
-
-				    		printf("We got out of the LOOOP->");
-				    		send(sd, &buflen, 0, 0 );
+				    		}  
+				    		//close the dir pointer
 				    		closedir(currdir);
-				    		// make sure buffer terminates in NULL char
-				    		
+ 				    		
  						
  						}else if (strncmp(buffer, "CD", 2)==0){ 
  					    	memset(cmd, 0, sizeof(cmd)); 
@@ -222,7 +218,7 @@ int main(int argc , char *argv[]){
 							sscanf(buffer,"%s %s", cmd, filenm);
  							retval = chdir(filenm);
  							if(retval==0){
- 								printf("Switched to directory-> %s \n", filenm);
+ 								printf("\nSwitched to directory /%s\n\n", filenm);
  								fflush(stdin);
  								send(sd, &retval, 4, 0);
  							}
