@@ -13,14 +13,16 @@
  
      
 int main(int argc , char *argv[]){   
+    char a;
     char buffer[1025];  //for storing incoming data  
     char cmd[5]; 	//for storing file name
 	char filenm[40]; 	//for storing file name
     char *message = "Munachiso's FTP Server 0.1 \r\n";  //welcome message 
 
     DIR *currdir;
+    FILE *fp;
 
-	int activity, addrlen;
+	int activity, addrlen, strmaddrlen;
     int clsocs[30];
     int mastsoc;
     int maxsd;
@@ -31,10 +33,12 @@ int main(int argc , char *argv[]){
     int valread;  
     
     int opt = 1;
-    int port = 8888; 
+    int port = 8888;
+    int port2 = 8080; 
 	int maxcls = 30;
     
     struct sockaddr_in address; 
+    struct sockaddr_in strmaddr; 
     struct dirent* currdirent;  
     unsigned int buflen = 0;
          
@@ -43,10 +47,9 @@ int main(int argc , char *argv[]){
     //set of socket descriptors and in an array as well so we can loop through them
     fd_set readfds;    
     for (int i = 0; i < maxcls; i++){   
-        clsocs[i] = 0;   
-    }  
 
-     
+        clsocs[i] = 0;   
+    }    
       
          
     //master socket  
@@ -55,9 +58,9 @@ int main(int argc , char *argv[]){
         exit(EXIT_FAILURE);   
     }   
      
-    //master socket should allow multpile connections 
-    if( setsockopt(mastsoc, SOL_SOCKET, SO_REUSEADDR, (char *)&opt,  
-          sizeof(opt)) < 0 ){   
+    //master socket should allow multiple connections 
+    if( setsockopt(mastsoc, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 ){ 
+
         perror("setsockopt");   
         exit(EXIT_FAILURE);   
     }   
@@ -72,7 +75,7 @@ int main(int argc , char *argv[]){
         perror("bind failed");   
         exit(EXIT_FAILURE);   
     }   
-    printf("Listener on port %d \n", port);   
+    printf("Listening on port %d \n", port);   
          
     //max of three pending connections for master socket
     if (listen(mastsoc, 3) < 0){   
@@ -80,6 +83,7 @@ int main(int argc , char *argv[]){
         exit(EXIT_FAILURE);   
     }   
     addrlen = sizeof(address);   
+    strmaddrlen = addrlen;
     //accept the incoming connections
     puts("Waiting for connections ...");       
     while(1){   
@@ -98,7 +102,7 @@ int main(int argc , char *argv[]){
                  
             //if valid socket descriptor, add to read list  
             if(sd > 0)   
-                FD_SET( sd , &readfds);   
+                FD_SET(sd, &readfds);   
                  
             //highest file descriptor number, need it for the select function  
             if(sd > maxsd)   
@@ -111,7 +115,7 @@ int main(int argc , char *argv[]){
             printf("select error");   
         }   
              
-        //If something happened on the master socket, then its an incoming connection so create new socket
+        //if something happened on the master socket, then its an incoming connection so create new socket
         
 
         if (FD_ISSET(mastsoc, &readfds)){   
@@ -122,7 +126,7 @@ int main(int argc , char *argv[]){
 	        }   
 	         
 	        //inform user of new socket number    
-	        printf("New connection , socket fd is %d , ip is : %s , port : %d\n" ,
+	        printf("New connection, socket fd is %d, ip is: %s, port: %d\n" ,
 	        		newsoc , inet_ntoa(address.sin_addr) , ntohs 
 	              (address.sin_port));   
 	       
@@ -160,7 +164,7 @@ int main(int argc , char *argv[]){
 	                    //Close the socket and mark as 0 in list for reuse  
 	                    close(sd);   
 	                    clsocs[i] = 0;   
-	                // if it wasnt to close, check what it was and respond appropriately
+	                //if it wasnt to close, check what it was and respond appropriately
 	                }else{   	    
 		                valread = read(sd, buffer, reclen);   
 	                    if (strncmp(buffer, "USER", 4)==0){ 
@@ -172,19 +176,20 @@ int main(int argc , char *argv[]){
 
 				    		buflen = (int)strlen(buffer);
 				    		buflen++; 
-				    		// make sure buffer terminates in NULL char
+				    		//make sure buffer terminates in NULL char
 				    		buffer[buflen] = '\0';
 				    		send(sd, &buflen, 4, 0 );	
 				    		send(sd, buffer, buflen, 0 );
+
 				    	}else if (strncmp(buffer, "LS", 2)==0){
-				    		// use pointer to needed directory
+				    		//use pointer to needed directory
 				    		currdir = opendir(".");
 
 				    		if (currdir == NULL){
 				    			printf("Cannot open directory\n\n");
 				    		}
 
-				    		// use readdir to send out the directory, clear buffer each time
+				    		//use readdir to send out the directory, clear buffer each time
 				    		while(1){
 				    			memset(buffer, 0, sizeof(buffer));
 
@@ -209,12 +214,73 @@ int main(int argc , char *argv[]){
 				    		//close the dir pointer
 				    		closedir(currdir);
  				    		
- 						
+ 						}else if (strncmp(buffer, "GET", 3)==0){
+				    		 
+
+ 							//get the GET command and file name
+ 							//put the file name into a path
+							memset(cmd, 0, sizeof(cmd)); 
+					    	memset(filenm, 0, sizeof(filenm));
+							sscanf(buffer,"%s %s", cmd, filenm);
+
+							//check if the file exists
+
+							fp = fopen(filenm, "r"); 
+
+					    	fflush(stdin);
+							//if doesnt exist, let the client know
+							if(fp==NULL){
+								retval = -1;
+								memset(buffer, 0, sizeof(buffer)); 
+ 								send(sd, &retval, 4, 0 );
+ 								continue;
+ 							//if it does, open a new socket and connect to client to send data
+							}else{
+								//let client know of incoming connection
+								retval = 0;
+								memset(buffer, 0, sizeof(buffer)); 
+ 								send(sd, &retval, 4, 0 );
+
+ 								//open socket to use
+ 								if ((newsoc = socket(AF_INET, SOCK_STREAM, 0)) < 0){ 
+							        printf("\n Get-Socket creation error \n"); 
+ 
+							    } 
+							    //get the details of the client socket
+						        getpeername(sd, (struct sockaddr*)&strmaddr, (socklen_t*)&strmaddrlen);   
+
+						        //change the port to the one to send to
+						        strmaddr.sin_port = htons(port2); 
+
+						        //connect to the port
+						        while( (connect(newsoc, (struct sockaddr *)&strmaddr, sizeof(strmaddr)) < 0) ){ 
+							        printf("\n Starting datastream connection... \n"); 
+     
+    							} 
+    							printf("Connected\n");
+   								
+   								//write a simple test sentence to the port
+   								int i = 0;
+   								while(1){
+   									a =  getc(fp);
+   									send(newsoc, &a, 1, 0);
+
+   									i++;
+   									if(i==20) break;
+								}	
+   								//indicate the end of the file transfer and close socket
+   								close(newsoc);
+
+ 								continue;
+							}
+
+							
+
  						}else if (strncmp(buffer, "CD", 2)==0){ 
  					    	memset(cmd, 0, sizeof(cmd)); 
 					    	memset(filenm, 0, sizeof(filenm)); 
 
-							// put the command into a path and change dir to that path
+							//put the command into a path and change dir to that path
 							sscanf(buffer,"%s %s", cmd, filenm);
  							retval = chdir(filenm);
  							if(retval==0){
@@ -227,7 +293,6 @@ int main(int argc , char *argv[]){
  								send(sd, &retval, 4, 0 );	 
  							}
  							
-
 				    	}else if (strncmp(buffer, "PASS", 4)==0){ 
 				    		send(sd, "Password okay", 13 , 0 );
 				    	}
