@@ -208,8 +208,6 @@ int main(int argc, char const *argv[])
 						//when done, close the data stream new socket and the master socket and continue with program
 						close(newsock);
 					    close(clientfd);
-
-
 				    // handle the get command to get a file from remote
 					}else if (strncmp(cmd, "GET", 3)==0){ 
 			    		scanf("%s", arg); 
@@ -374,8 +372,10 @@ int main(int argc, char const *argv[])
 					    fflush(stdin);
 			    		close(soc);
 			    		exit(1);
-			    	} else{
-						printf("Command not valid. \n\n"); 
+			    	//otherwise the command is foreign
+			    	}else{
+			    		scanf("%s", cmd);
+						printf("Command not valid! \n\n"); 
 						fflush(stdin);
 						continue;
 			    	}
@@ -396,7 +396,7 @@ int main(int argc, char const *argv[])
 		//ask to authenticate first if not done
 		}else{
 			scanf("%s", arg);
-			printf("Please authenticate. \n\n"); 
+			printf("Please authenticate starting with username. \n\n"); 
 			fflush(stdin);
 			continue;
 		}
