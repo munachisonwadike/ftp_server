@@ -40,3 +40,7 @@ ftp> CD testdir //should work and consecutive PWD should say we are in that dir
 Created dummy files which I tried to tranfer using my get and post commands, and debugged the code until the files where getting copied exactly as needed
 
 
+Also, typing the lower cases of any of the commands should not work, such as say 
+4) cd testdir
+
+Had to fix this bug, whereby the server prints out "Command not valid" twice, rather than once. This also happened with lower case"put" and "get"
