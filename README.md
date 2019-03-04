@@ -1,8 +1,13 @@
  
-Brief description of Client-Server architecture:
+The server must be running before the client in order for the client to be able to connect to it. 
 
-I started the eserver using the select system call,
-The client was done using the regular approach whereby it creates a socket over tcp and sends content to the socket. The server creates its own socket and reads from the sockets. Both the client and the server can read and write to the socket using the send and read calls. The default backlog of incoming connections to the server is 3 so in order to handle multiple connections, I had to use the select system call. The master socket was bound to the different ports on the server so that if there is a change in the the master socket, we know there is an incoming connection. 
+The client initiates a connection via a tcp socket to the port the server is listening on. When the server recieved the requests to connect on its master socket, it creates another socket child to handle the request. This is the control connection.
 
-...
+The default maximum backlog of incoming connections to the server is three so in order to handle multiple connections, we implement the select system call. 
+
+When there is a request for a file transfer using either GET or POST, the server initiates another connection for the data stream, and the client accepts. When the data stream is ended, a small notification is provided.
+
+
+
+ 
 
