@@ -10,15 +10,17 @@
     
 int main(int argc, char const *argv[]) 
 { 
-
+	char a;
     char arg[10] = {0};
     char buffer[1024] = {0}; 
     char cmd[5] = {0};
+    char filenm2[40] = {0};
 	char *hello = "Hello from client"; 
 	char ip[15] = {0};
     char outmsg[20] = {0};
 
     DIR *currdir;
+    FILE *fp;
 
     int clientfd = 0;
     int newsock;
@@ -142,18 +144,72 @@ int main(int argc, char const *argv[])
 			    	scanf("%s", cmd);
 					// handle the put command to put a file to remote from local
 					if (strncmp(cmd, "PUT", 3)==0){ 
-						// get the put file 
-						scanf("%s", arg);
-						sprintf(outmsg, "PUT %s", arg);
+						 
 
-			    		// send put to server
-				  		send(soc, outmsg, strlen(outmsg), 0 );
+					    scanf("%s", arg); 
+ 					    //see if the file exists or not 
+					    fp = fopen(arg, "r");
+ 					    //if it doesn't, let the server know nothing is coming
+				  		if(fp==NULL){		
+ 				  			sprintf(outmsg, "PUT -1");
+				  			sendlen = 6;
+				  			send(soc, &sendlen, 4, 0);
+			    			send(soc, outmsg, sendlen, 0); 
+			    			printf("File '%s' does not exist\n\n", arg );
+				  			continue;
+				  		}
+				  		//otherwise	send put command to server
+						sprintf(outmsg, "PUT %s\n", arg);
+			    		sendlen = (int)strlen(outmsg);
+			    		send(soc, &sendlen, 4, 0);
+				  		send(soc, outmsg, sendlen, 0);  
 
-						// read the server response to screen
-						memset(buffer, 0, sizeof(buffer));
-					    valread = read( soc , buffer, 1024);  
-					    printf("%s\n\n",buffer ); 
-					    fflush(stdin);
+						//create new socket to wait for server datastream connection 
+					    if ((clientfd = socket(AF_INET, SOCK_STREAM, 0)) == 0){ 
+					        perror("socket failed"); 
+					          
+					    } 
+					       
+					    //set socket options to bind to open ports and listen for incoming stream
+					    if (setsockopt(clientfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))){ 
+					        perror("setsockopt"); 
+					         
+					    }
+
+					    strmaddr.sin_family = AF_INET; 
+					   	strmaddr.sin_addr.s_addr = INADDR_ANY; 
+					    strmaddr.sin_port = htons(port2); 
+
+
+					    //attach socket to point 8080 
+					    if (bind(clientfd, (struct sockaddr *)&strmaddr, sizeof(strmaddr))<0){ 
+					        perror("bind failed"); 
+						} 
+					    //listen for data stream connection request
+					    if (listen(clientfd, 3) < 0){ 
+					        perror("listen"); 
+					         
+					    } 
+					    //if you get data stream connection request, accept it
+					    if ((newsock = accept(clientfd, (struct sockaddr *)&strmaddr, (socklen_t*)&strmaddrlen))<0) { 
+					        perror("accept"); 
+					    } 
+					    //read the doc with whileloop and send over the socket
+						while(1){
+							a =  getc(fp);
+							if(a==-1){
+								send(newsock, &a, 4, 0);
+								break;
+							}
+							send(newsock, &a, 4, 0);
+
+						}
+						printf("File '%s' is now available on Server \n\n", arg);
+						//when done, close the data stream new socket and the master socket and continue with program
+						close(newsock);
+					    close(clientfd);
+
+
 				    // handle the get command to get a file from remote
 					}else if (strncmp(cmd, "GET", 3)==0){ 
 			    		scanf("%s", arg); 
@@ -207,25 +263,20 @@ int main(int argc, char const *argv[])
 						        perror("accept"); 
 						         
 						    } 
-						    //read the content of data stream using a while loop
-							int i = 0;
+						    //read the content of data stream using a while loop and send to file
+							sprintf(filenm2, "%s%s\n", arg, "(1)");
+							fp = fopen(filenm2, "w+"); 
 							while(1){
-								valread = read(newsock, buffer, 1); 
-
-							    printf("%s",buffer ); 
-							    fflush(stdin);
-							    i++;
-   								if(i==20) break;
+								valread = read(newsock, &a, 4); 
+								if(a==-1) break;
+   							    putc((char)a, fp);
+   							    fflush(fp);    							
 							}
-							printf("\n\n");
+							printf("File %s is now available locally. \n\n", arg);
 							//when done, close the data stream new socket and the master socket and continue with program
 							close(newsock);
 						    close(clientfd);
 					    }
-
-					   
-
-
 					//handle the remote cd command
 					}else if (strncmp(cmd, "CD", 2)==0){ 
 

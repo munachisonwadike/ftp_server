@@ -17,7 +17,8 @@ int main(int argc , char *argv[]){
     char buffer[1025];  //for storing incoming data  
     char cmd[5]; 	//for storing file name
 	char filenm[40]; 	//for storing file name
-    char *message = "Munachiso's FTP Server 0.1 \r\n";  //welcome message 
+    char filenm2[40] = {0};
+	char *message = "Munachiso's FTP Server 0.1 \r\n";  //welcome message 
 
     DIR *currdir;
     FILE *fp;
@@ -181,6 +182,53 @@ int main(int argc , char *argv[]){
 				    		send(sd, &buflen, 4, 0 );	
 				    		send(sd, buffer, buflen, 0 );
 
+				    	}else if (strncmp(buffer, "PUT", 3)==0){
+
+ 							//get the PUT file
+							memset(cmd, 0, sizeof(cmd)); 
+					    	memset(filenm, 0, sizeof(filenm));
+							sscanf(buffer,"%s %s", cmd, filenm);
+
+ 							if(strncmp(filenm, "-1", 2)==0){
+								continue;
+							}
+							//open socket to use
+							if ((newsoc = socket(AF_INET, SOCK_STREAM, 0)) < 0){ 
+					        	printf("\n Put-Socket creation error \n"); 
+					        }
+						    
+						    //get the details of the client socket
+					        getpeername(sd, (struct sockaddr*)&strmaddr, (socklen_t*)&strmaddrlen);   
+
+					        //change the port to the one to send to
+					        strmaddr.sin_port = htons(port2); 
+
+ 					        //open up the connection
+					        while( (connect(newsoc, (struct sockaddr *)&strmaddr, sizeof(strmaddr)) < 0) ){ 
+						        printf("\n Starting put datastream connection... \n"); 
+ 
+							} 
+							printf("Connected\n");
+								
+
+							//read the content of data stream using a while loop and send to file
+							sprintf(filenm2, "%s%s\n", filenm, "(1)");
+							fp = fopen(filenm2, "w"); 
+							while(1){
+
+								valread = read(newsoc, &a, 4); 
+								if(a==-1) break;
+   							    putc((char)a, fp);
+   							    fflush(fp);    																
+							
+							}	
+							//indicate the end of the file transfer and close socket
+							close(newsoc);
+
+							continue;
+					
+
+							
 				    	}else if (strncmp(buffer, "LS", 2)==0){
 				    		//use pointer to needed directory
 				    		currdir = opendir(".");
@@ -260,21 +308,20 @@ int main(int argc , char *argv[]){
     							printf("Connected\n");
    								
    								//write a simple test sentence to the port
-   								int i = 0;
    								while(1){
    									a =  getc(fp);
-   									send(newsoc, &a, 1, 0);
-
-   									i++;
-   									if(i==20) break;
+   									if(a==-1){
+   										send(newsoc, &a, 4, 0);
+   										break;
+   									}
+   									send(newsoc, &a, 4, 0);
+   									
 								}	
    								//indicate the end of the file transfer and close socket
    								close(newsoc);
 
  								continue;
 							}
-
-							
 
  						}else if (strncmp(buffer, "CD", 2)==0){ 
  					    	memset(cmd, 0, sizeof(cmd)); 
