@@ -1,4 +1,5 @@
- 
+## FTP Server 
+
 The server must be running before the client in order for the client to be able to connect to it. 
 
 The client initiates a connection via a tcp socket to the port the server is listening on. When the server recieved the requests to connect on its master socket, it creates another socket child to handle the request. This is the control connection.
@@ -10,4 +11,3 @@ The LS, PWD, CD, and USER and PASS commands and their outputs are communicated o
 
 At present, becuase the server is running only on the local host, you would need to start the client using "./FTPclient 127.0.0.1 8888". Where 8888 is the port number the server is listening on.
  
-
